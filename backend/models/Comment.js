@@ -1,8 +1,8 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
-const commentSchema = new mongoose.Schema(
+const CommentSchema = new mongoose.Schema(
   {
-    user: {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
@@ -10,12 +10,14 @@ const commentSchema = new mongoose.Schema(
     post: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Post',
+      trim: true,
       required: true,
     },
-    text: {
+    content: {
       type: String,
       required: true,
-      maxlength: [150, 'Comment should be at most 150 characters long'],
+      required: [true, 'Please provide content for the comment'],
+      maxlength: [500, 'Comment can not be more than 500 characters'],
     },
     createdAt: {
       type: Date,
@@ -27,6 +29,4 @@ const commentSchema = new mongoose.Schema(
   }
 );
 
-const Comment = mongoose.model('Comment', commentSchema);
-
-export default Comment;
+module.exports = mongoose.model('Comment', CommentSchema);
