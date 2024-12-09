@@ -1,9 +1,13 @@
-import express, { urlencoded } from 'express';
+import express from 'express';
+import { urlencoded } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
+import connectDB from './utils/db.js';
 
+dotenv.config({});
 const PORT = 3000;
-
+connectDB();
 const app = express();
 
 // middleware
