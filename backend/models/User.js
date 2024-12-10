@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       minlength: [3, 'Username must be at least 3 characters long'],
-      maxlength: [20, 'Username can not be more than 20 characters'],
+      maxlength: [20, 'Username cannot be more than 20 characters'],
     },
     email: {
       type: String,
@@ -36,8 +36,7 @@ const UserSchema = new mongoose.Schema(
     },
     bio: {
       type: String,
-      required: false,
-      max: [150, 'Bio can not be more than 150 characters'],
+      maxlength: [150, 'Bio cannot be more than 150 characters'],
     },
     following: [
       {
@@ -60,7 +59,7 @@ const UserSchema = new mongoose.Schema(
 // Hash password before saving to database
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
-    next();
+    return next();
   }
   this.password = await bcrypt.hash(this.password, 10);
   next();

@@ -3,13 +3,13 @@ const User = require('../models/User');
 const Comment = require('../models/Comment');
 
 // Create a new post
-exports.createPost = async (req, res) => {
+const createPost = async (req, res) => {
   try {
     const { userId, description, image } = req.body;
 
-    // Validate the user input
+    // Validate input
     if (!userId || !description || !image) {
-      return res.status(400).json({ message: 'Please enter all fields' });
+      return res.status(400).json({ message: 'All fields are required' });
     }
 
     const post = new Post({
@@ -26,9 +26,10 @@ exports.createPost = async (req, res) => {
 };
 
 // Get Posts of a user
-exports.getUserPosts = async (req, res) => {
+const getUserPosts = async (req, res) => {
   try {
     const { userId } = req.params;
+
     // Validate input
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required' });
@@ -43,10 +44,11 @@ exports.getUserPosts = async (req, res) => {
   }
 };
 
-//Like Post
-exports.likePost = async (req, res) => {
+// Like Post
+const likePost = async (req, res) => {
   try {
-    const { postId, UserId } = req.body;
+    const { postId, userId } = req.body;
+
     // Validate input
     if (!postId || !userId) {
       return res
@@ -56,9 +58,9 @@ exports.likePost = async (req, res) => {
 
     const post = await Post.findById(postId);
 
-    // Check if the user already liked the post
+    // Check if the post exists
     if (!post) {
-      return res.status(404).json('Post not found');
+      return res.status(404).json({ message: 'Post not found' });
     }
 
     // Check if the user already liked the post
@@ -77,7 +79,7 @@ exports.likePost = async (req, res) => {
 };
 
 // Get Post Comments
-exports.getPostComments = async (req, res) => {
+const getPostComments = async (req, res) => {
   try {
     const { postId } = req.params;
 
@@ -88,8 +90,9 @@ exports.getPostComments = async (req, res) => {
 
     const post = await Post.findById(postId).populate('comments');
     if (!post) {
-      return res.status(404).json('Post not found');
+      return res.status(404).json({ message: 'Post not found' });
     }
+
     res.status(200).json(post.comments);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -97,7 +100,7 @@ exports.getPostComments = async (req, res) => {
 };
 
 // Create a new comment
-exports.createComment = async (req, res) => {
+const createComment = async (req, res) => {
   try {
     const { userId, postId, content } = req.body;
 
@@ -125,7 +128,7 @@ exports.createComment = async (req, res) => {
 };
 
 // Delete a comment
-exports.deleteComment = async (req, res) => {
+const deleteComment = async (req, res) => {
   try {
     const { commentId } = req.params;
 
@@ -136,18 +139,27 @@ exports.deleteComment = async (req, res) => {
 
     const comment = await Comment.findById(commentId);
     if (!comment) {
-      return res.status(404).json('Comment not found');
+      return res.status(404).json({ message: 'Comment not found' });
     }
 
+    // Remove comment from the post
+    const post = await Post.findById(comment.post);
+    if (post) {
+      post.comments.pull(comment._id);
+      await post.save();
+    }
+
+    // Delete the comment
     await comment.delete();
-    res.status(200).json('Comment has been deleted');
+
+    res.status(200).json({ message: 'Comment has been deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 // Delete a post
-exports.deletePost = async (req, res) => {
+const deletePost = async (req, res) => {
   try {
     const { postId } = req.params;
 
@@ -158,18 +170,18 @@ exports.deletePost = async (req, res) => {
 
     const post = await Post.findById(postId);
     if (!post) {
-      return res.status(404).json('Post not found');
+      return res.status(404).json({ message: 'Post not found' });
     }
 
     await post.delete();
-    res.status(200).json('Post has been deleted');
+    res.status(200).json({ message: 'Post has been deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 // Get Timeline Posts
-exports.getTimelinePosts = async (req, res) => {
+const getTimelinePosts = async (req, res) => {
   try {
     const { userId } = req.body;
 
@@ -178,14 +190,19 @@ exports.getTimelinePosts = async (req, res) => {
       return res.status(400).json({ message: 'User ID is required' });
     }
 
-    const currentUser = await User.findById(req.body.userId);
+    const currentUser = await User.findById(userId);
+    if (!currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     const userPosts = await Post.find({ user: currentUser._id });
     const friendPosts = await Promise.all(
       currentUser.following.map((friendId) => {
         return Post.find({ user: friendId });
       })
     );
-    res.json(userPosts.concat(...friendPosts));
+
+    res.status(200).json(userPosts.concat(...friendPosts));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -1,29 +1,40 @@
 const Follow = require('../models/Follow');
+const User = require('../models/User');
 
-//Follow User
-exports.followUser = async (req, res) => {
+// Follow a user
+const followUser = async (req, res) => {
   try {
-    // validate request
-    if (!req.body.followwerId || !req.body.followingId) {
-      return res.status(400).json({ message: 'Please fill all fields' });
-    }
+    const { userId, followId } = req.body;
 
-    const { followwerId, followinfId } = req.body;
-
-    const exisitingFollow = await Follow.findOne({
-      follower: followedId,
-      following: followinfId,
-    });
-    if (exisitingFollow) {
+    // Validate input
+    if (!userId || !followId) {
       return res
         .status(400)
-        .json({ message: 'You are already following this user' });
+        .json({ message: 'User ID and Follow ID are required' });
     }
 
-    const follow = new Follow({
-      follower: followwerId,
-      following: followingId,
+    // Check if the user and follow user exist
+    const user = await User.findById(userId);
+    const followUser = await User.findById(followId);
+    if (!user || !followUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if already following
+    const existingFollow = await Follow.findOne({
+      follower: userId,
+      following: followId,
     });
+    if (existingFollow) {
+      return res.status(400).json({ message: 'Already following this user' });
+    }
+
+    // Create a new follow
+    const follow = new Follow({
+      follower: userId,
+      following: followId,
+    });
+
     await follow.save();
     res.status(201).json({ message: 'User followed successfully' });
   } catch (error) {
@@ -31,25 +42,36 @@ exports.followUser = async (req, res) => {
   }
 };
 
-// Unfollow User
-exports.unfollowUser = async (req, res) => {
+// Unfollow a user
+const unfollowUser = async (req, res) => {
   try {
-    const { followerId, followingId } = req.body;
+    const { userId, unfollowId } = req.body;
 
-    // validate request
-    if (!followerId || !followingId) {
-      return res.status(400).json({ message: 'Please fill all fields' });
-    }
-    const follow = await Follow.findOne({
-      follower: followerId,
-      following: followingId,
-    });
-
-    if (!follow) {
+    // Validate input
+    if (!userId || !unfollowId) {
       return res
         .status(400)
-        .json({ message: 'You are not following this user' });
+        .json({ message: 'User ID and Unfollow ID are required' });
     }
+
+    // Check if the user and unfollow user exist
+    const user = await User.findById(userId);
+    const unfollowUser = await User.findById(unfollowId);
+    if (!user || !unfollowUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if not following
+    const existingFollow = await Follow.findOne({
+      follower: userId,
+      following: unfollowId,
+    });
+    if (!existingFollow) {
+      return res.status(400).json({ message: 'Not following this user' });
+    }
+
+    // Remove follow
+    await Follow.deleteOne({ follower: userId, following: unfollowId });
     res.status(200).json({ message: 'User unfollowed successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -57,30 +79,38 @@ exports.unfollowUser = async (req, res) => {
 };
 
 // Get all followers
-exports.getFollowers = async (req, res) => {
+const getFollowers = async (req, res) => {
   try {
     const { userId } = req.params;
-    // validate request
+
+    // Validate request
     if (!userId) {
-      return res.status(400).json({ message: 'Please provide a user Id' });
+      return res.status(400).json({ message: 'Please provide a user ID' });
     }
-    const followers = await Follow.find({ following: userId });
-    resstatus(200).json(followers);
+
+    const followers = await Follow.find({ following: userId }).populate(
+      'follower'
+    );
+    res.status(200).json(followers);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 // Get all following
-exports.getFollowing = async (req, res) => {
+const getFollowing = async (req, res) => {
   try {
     const { userId } = req.params;
-    // validate request
+
+    // Validate request
     if (!userId) {
-      return res.status(400).json({ message: 'Please provide a user Id' });
+      return res.status(400).json({ message: 'Please provide a user ID' });
     }
-    const following = await Follow.find({ follower: userId });
-    resstatus(200).json(following);
+
+    const following = await Follow.find({ follower: userId }).populate(
+      'following'
+    );
+    res.status(200).json(following);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

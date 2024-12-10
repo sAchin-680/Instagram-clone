@@ -3,14 +3,14 @@ const mongoose = require('mongoose');
 const PostSchema = new mongoose.Schema(
   {
     userId: {
-      type: mongoose.Schema.Types.OnjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
     description: {
       type: String,
       required: true,
-      maxlength: [500, 'Description can not be more than 500 characters'],
+      maxlength: [500, 'Description cannot be more than 500 characters'],
     },
     likes: [
       {
@@ -20,7 +20,7 @@ const PostSchema = new mongoose.Schema(
     ],
     comments: [
       {
-        type: mongoose.Schema.Types.ObjectsId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Comment',
       },
     ],
@@ -30,7 +30,7 @@ const PostSchema = new mongoose.Schema(
     },
     createdAt: {
       type: Date,
-      default: new Date(),
+      default: Date.now,
     },
   },
   {
